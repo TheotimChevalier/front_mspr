@@ -6,7 +6,6 @@ import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 
-
 const initialData = {
   age: "",
   glucose: "",
