@@ -52,16 +52,15 @@ export default function DiabetesPredictor() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:8000/predict/diabete", {
+      const response = await axios.post(`http://localhost:8000/predict/diabete/${selectedModel}`, {
         ...Object.fromEntries(Object.entries(formData).map(([key, val]) => [key, parseFloat(val)])),
-        model: selectedModel, // <-- Ajout du modèle
       });
       setResult(response.data);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors de la prédiction :", error);
     }
     setLoading(false);
-  };
+};
 
   const chartData = [
     { metric: "Glucose", value: formData.glucose },
