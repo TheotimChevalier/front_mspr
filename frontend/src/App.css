@@ -24,7 +24,7 @@ h1 {
 /* Form Styles */
 form {
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem;
   grid-template-columns: repeat(4, 1fr);
   justify-items: center;
   align-items: center;
@@ -220,6 +220,7 @@ body.dark select:focus {
   color: #60a5fa;
 }
 
+/* Select and Button Wrapper for alignment */
 .select-wrapper,
 .button-wrapper {
   width: 100%;
@@ -228,8 +229,11 @@ body.dark select:focus {
   margin-top: 1.5rem;
 }
 
-.select-wrapper select,
-.button-wrapper button {
-  width: 250px;
-  max-width: 100%;
+/* Model and Predict positioning */
+.model-predict-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem; /* Espace entre le select (model) et le bouton (predict) */
+  grid-column: span 4;
+  width: 100%;
 }

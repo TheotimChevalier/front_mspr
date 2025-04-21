@@ -42,7 +42,9 @@ export default function DiabetesPredictor() {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Convertir la valeur en nombre, ou laisser "" si le champ est vide
+    const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   const handleModelChange = (e) => {
@@ -53,8 +55,9 @@ export default function DiabetesPredictor() {
     e.preventDefault();
     setLoading(true);
     try {
+      // S'assurer que toutes les valeurs sont des nombres valides avant de les envoyer
       const numericData = Object.fromEntries(
-        Object.entries(formData).map(([key, val]) => [key, parseFloat(val)])
+        Object.entries(formData).map(([key, val]) => [key, isNaN(val) ? 0 : val])
       );
 
       const response = await axios.post(
@@ -69,18 +72,18 @@ export default function DiabetesPredictor() {
   };
 
   const chartData = [
-    { metric: "Glucose", value: formData.glucose },
-    { metric: "Blood Pressure", value: formData.bloodpressure },
-    { metric: "Skin Thickness", value: formData.skinthickness },
-    { metric: "Insulin", value: formData.insulin },
-    { metric: "BMI", value: formData.bodymassindex },
-    { metric: "DPF", value: formData.diabetespedigreefunction },
-    { metric: "HbA1c", value: formData.glycatedhemoglobine },
+    { metric: "Glucose", value: formData.glucose || 0 },
+    { metric: "Blood Pressure", value: formData.bloodpressure || 0 },
+    { metric: "Skin Thickness", value: formData.skinthickness || 0 },
+    { metric: "Insulin", value: formData.insulin || 0 },
+    { metric: "BMI", value: formData.bodymassindex || 0 },
+    { metric: "DPF", value: formData.diabetespedigreefunction || 0 },
+    { metric: "HbA1c", value: formData.glycatedhemoglobine || 0 },
   ];
 
-  return (
+  return  (
     <main className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4 text-center">Prédiction du Diabète</h1>
+      <h1 className="text-3xl font-bold mb-4 text-center text-indigo-800">Prédiction du Diabète</h1>
 
       <form
         onSubmit={handleSubmit}
@@ -89,7 +92,7 @@ export default function DiabetesPredictor() {
       >
         {Object.keys(initialData).map((key) => (
           <div key={key} className="flex flex-col gap-1">
-            <Label htmlFor={key}>{key}</Label>
+            <Label htmlFor={key} className="text-gray-900">{key}</Label>
             <Input
               type="number"
               id={key}
@@ -98,22 +101,22 @@ export default function DiabetesPredictor() {
               onChange={handleChange}
               step="any"
               required
+              className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded p-2 focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         ))}
 
-        <div className="flex flex-col gap-1 sm:col-span-2 md:col-span-3">
-          <Label htmlFor="model">Modèle IA</Label>
+        {/* Section Model et Predict centrée */}
+        <div className="select-wrapper sm:col-span-2 md:col-span-3 flex flex-col items-center mt-4">
+          <Label htmlFor="model" className="text-gray-900">Modèle IA</Label>
           <select
             id="model"
             name="model"
-            className="border rounded p-2"
+            className="w-1/2 p-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
             value={selectedModel}
             onChange={handleModelChange}
           >
-            <option value="" disabled>
-              Choisissez votre modèle
-            </option>
+            <option value="" disabled>Choisissez votre modèle</option>
             {models.map((modelName) => (
               <option key={modelName} value={modelName}>
                 {modelName}
@@ -122,8 +125,12 @@ export default function DiabetesPredictor() {
           </select>
         </div>
 
-        <div className="button-container sm:col-span-2 md:col-span-3">
-          <Button type="submit" disabled={loading} className="w-full mt-2">
+        <div className="button-container sm:col-span-2 md:col-span-3 flex justify-center mt-4">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-1/2 mt-4 p-3 text-white bg-indigo-600 rounded hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 disabled:bg-indigo-300"
+          >
             {loading ? "Chargement..." : "Prédire"}
           </Button>
         </div>
@@ -134,7 +141,7 @@ export default function DiabetesPredictor() {
           <Card className="bg-green-50 dark:bg-green-900">
             <CardContent className="p-4 text-center">
               <h2 className="text-2xl font-semibold">Résultat de la Prédiction</h2>
-              <p className="mt-2 text-lg">
+              <p className="mt-2 text-lg text-green-700 dark:text-green-300">
                 {result.prediction
                   ? `Risque de diabète détecté (Probabilité : ${result.probability.toFixed(2)})`
                   : `Pas de risque significatif détecté (Probabilité : ${result.probability.toFixed(2)})`}

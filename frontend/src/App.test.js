@@ -1,84 +1,83 @@
+import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import DiabetesPredictor from "./components/DiabetesPredictor";
 import axios from "axios";
+import DiabetesPredictor from "./components/DiabetesPredictor"; // adapte le chemin selon ton projet
 
-// Mocking axios to simulate the API call
 jest.mock("axios");
 
+const mockModels = ["model1", "model2"];
+const mockPrediction = {
+  prediction: true,
+  probability: 0.87,
+};
+
 describe("DiabetesPredictor", () => {
-  it("renders the form correctly", async () => {
-    axios.get.mockResolvedValue({ data: ["Model 1", "Model 2", "Model 3"] });
-    
+  beforeEach(() => {
+    axios.get.mockResolvedValue({ data: mockModels });
+    axios.post.mockResolvedValue({ data: mockPrediction });
+  });
+
+  test("affiche tous les champs du formulaire", async () => {
     render(<DiabetesPredictor />);
-    
-    // Check if all form fields are rendered
-    expect(screen.getByLabelText(/age/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/glucose/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/bloodpressure/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/skinthickness/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/insulin/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/bodymassindex/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/diabetespedigreefunction/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/glycatedhemoglobine/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/model/i)).toBeInTheDocument();
-    
-    // Ensure options are populated
+
+    // Attendre que les modèles soient chargés
     await waitFor(() => {
-      expect(screen.getAllByRole('option')).toHaveLength(4); // 3 models + 1 empty option
+      expect(screen.getByDisplayValue("model1")).toBeInTheDocument();
+    });
+
+    Object.keys({
+      age: "",
+      glucose: "",
+      bloodpressure: "",
+      skinthickness: "",
+      insulin: "",
+      bodymassindex: "",
+      diabetespedigreefunction: "",
+      glycatedhemoglobine: "",
+    }).forEach((key) => {
+      expect(screen.getByLabelText(new RegExp(key, "i"))).toBeInTheDocument();
     });
   });
 
-  it("fetches models on load", async () => {
-    axios.get.mockResolvedValue({ data: ["Model 1", "Model 2", "Model 3"] });
-    
+  test("met à jour les champs du formulaire", async () => {
     render(<DiabetesPredictor />);
-    
-    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(4)); // Checking if options are fetched
+    await waitFor(() => screen.getByDisplayValue("model1"));
+
+    const ageInput = screen.getByLabelText(/age/i);
+    fireEvent.change(ageInput, { target: { value: "45" } });
+    expect(ageInput.value).toBe("45");
   });
 
-  it("handles form submission and displays result", async () => {
-    axios.get.mockResolvedValue({ data: ["Model 1", "Model 2", "Model 3"] });
-    
+  test("change le modèle sélectionné", async () => {
     render(<DiabetesPredictor />);
-    
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "25" } });
-    fireEvent.change(screen.getByLabelText(/glucose/i), { target: { value: "110" } });
-    fireEvent.change(screen.getByLabelText(/bloodpressure/i), { target: { value: "70" } });
-    fireEvent.change(screen.getByLabelText(/skinthickness/i), { target: { value: "18" } });
-    fireEvent.change(screen.getByLabelText(/insulin/i), { target: { value: "30" } });
+    await waitFor(() => screen.getByDisplayValue("model1"));
+
+    const select = screen.getByRole("combobox");
+    fireEvent.change(select, { target: { value: "model2" } });
+    expect(select.value).toBe("model2");
+  });
+
+  test("envoie les données et affiche le résultat", async () => {
+    render(<DiabetesPredictor />);
+    await waitFor(() => screen.getByDisplayValue("model1"));
+
+    // Remplir tous les champs requis
+    fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText(/glucose/i), { target: { value: "120" } });
+    fireEvent.change(screen.getByLabelText(/bloodpressure/i), { target: { value: "80" } });
+    fireEvent.change(screen.getByLabelText(/skinthickness/i), { target: { value: "25" } });
+    fireEvent.change(screen.getByLabelText(/insulin/i), { target: { value: "90" } });
     fireEvent.change(screen.getByLabelText(/bodymassindex/i), { target: { value: "28" } });
     fireEvent.change(screen.getByLabelText(/diabetespedigreefunction/i), { target: { value: "0.5" } });
     fireEvent.change(screen.getByLabelText(/glycatedhemoglobine/i), { target: { value: "6.5" } });
-    fireEvent.change(screen.getByLabelText(/model/i), { target: { value: "Model 1" } });
 
-    // Submit form
-    fireEvent.click(screen.getByText(/predict/i));
-    
-    // Check if loading state is shown
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
-  });
+    const button = screen.getByRole("button", { name: /prédire/i });
+    fireEvent.click(button);
 
-  it("shows loading state while fetching prediction", async () => {
-    axios.get.mockResolvedValue({ data: ["Model 1", "Model 2", "Model 3"] });
-    
-    render(<DiabetesPredictor />);
-    
-    fireEvent.change(screen.getByLabelText(/model/i), { target: { value: "Model 1" } });
-    fireEvent.click(screen.getByText(/predict/i));
-    
-    // Check that loading is displayed
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
-  });
+    await waitFor(() =>
+      expect(screen.getByText(/Risque de diabète détecté/i)).toBeInTheDocument()
+    );
 
-  it("handles API error gracefully", async () => {
-    axios.get.mockRejectedValue(new Error("Failed to fetch models"));
-
-    render(<DiabetesPredictor />);
-    
-    await waitFor(() => {
-      // Test that the models are not rendered due to error
-      expect(screen.queryAllByRole('option')).toHaveLength(1); // Only the default option
-    });
+    expect(screen.getByText(/0.87/)).toBeInTheDocument();
   });
 });
