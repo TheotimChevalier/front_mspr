@@ -3,6 +3,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import axios from "axios";
 import DiabetesPredictor from "./components/DiabetesPredictor"; // adapte le chemin selon ton projet
 
+// Mock de ResizeObserver pour Jest
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}; 
+
 jest.mock("axios");
 
 const mockModels = ["diabetes_model", "bmi_model", "bloodpressure_model"];
@@ -60,10 +67,10 @@ describe("DiabetesPredictor", () => {
 
   test("envoie les données et affiche le résultat", async () => {
     render(<DiabetesPredictor />);
-
+  
     // Attendre que les champs du formulaire soient visibles
     await waitFor(() => screen.getByLabelText(/age/i));
-
+  
     // Remplir tous les champs requis
     fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "50" } });
     fireEvent.change(screen.getByLabelText(/glucose/i), { target: { value: "120" } });
@@ -73,14 +80,17 @@ describe("DiabetesPredictor", () => {
     fireEvent.change(screen.getByLabelText(/bodymassindex/i), { target: { value: "28" } });
     fireEvent.change(screen.getByLabelText(/diabetespedigreefunction/i), { target: { value: "0.5" } });
     fireEvent.change(screen.getByLabelText(/glycatedhemoglobine/i), { target: { value: "6.5" } });
-
+  
     const button = screen.getByRole("button", { name: /prédire/i });
     fireEvent.click(button);
-
-    // Attendre que le résultat de la prédiction soit affiché
+  
+    // Attendre que le résultat de la prédiction (risque de diabète) soit affiché
     await waitFor(() => screen.getByText(/Risque de diabète détecté/i));
-
-    // Vérifier le texte affiché et la probabilité
-    expect(screen.getByText(/0.87/)).toBeInTheDocument();
+  
+    // Attendre que la probabilité (0.87) soit affichée
+    await waitFor(() => screen.getByText(/0.87/i, { timeout: 1000 }));
+  
+    // Vérifier que la probabilité (0.87) est bien présente
+    expect(screen.getByText(/0.87/i)).toBeInTheDocument();
   });
 });
