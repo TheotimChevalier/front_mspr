@@ -1,76 +1,114 @@
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import DiabetesPredictor from "./components/DiabetesPredictor";
-import axios from "axios";
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import DiabetesPredictor from './components/DiabetesPredictor';
+import axios from 'axios';
+import { act } from 'react'; // Assurez-vous que `act` est importé depuis 'react'
 
-jest.mock("axios");
+jest.mock('axios');
 
-describe("DiabetesPredictor", () => {
+describe('DiabetesPredictor', () => {
+
   beforeEach(() => {
+    // Mock des réponses de l'API
     axios.get.mockResolvedValue({
-      data: ["model1", "model2", "model3"],
+      data: ['diabetes_model', 'bloodpressure_model', 'bmi_model']
     });
-  });
-
-  it("renders the form correctly", async () => {
-    render(<DiabetesPredictor />);
-    await waitFor(() => screen.getByRole("combobox"));
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
-    expect(screen.getAllByRole("option")).toHaveLength(4); // 3 modèles + 1 option vide
-  });
-
-  it("fetches models on load", async () => {
-    render(<DiabetesPredictor />);
-    await waitFor(() => expect(axios.get).toHaveBeenCalledWith("http://localhost:8000/models"));
-    expect(screen.getByRole("combobox")).toHaveValue("model1"); // sélection du modèle par défaut
-  });
-
-  it("handles form submission and displays result", async () => {
     axios.post.mockResolvedValue({
-      data: { prediction: true, probability: 0.85 },
-    });
-
-    render(<DiabetesPredictor />);
-    await waitFor(() => screen.getByRole("combobox"));
-
-    fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "33" } });
-    fireEvent.change(screen.getByLabelText(/glucose/i), { target: { value: "150" } });
-    fireEvent.change(screen.getByLabelText(/bloodpressure/i), { target: { value: "80" } });
-    fireEvent.change(screen.getByLabelText(/skinthickness/i), { target: { value: "20" } });
-    fireEvent.change(screen.getByLabelText(/insulin/i), { target: { value: "90" } });
-    fireEvent.change(screen.getByLabelText(/bodymassindex/i), { target: { value: "28.5" } });
-    fireEvent.change(screen.getByLabelText(/diabetespedigreefunction/i), { target: { value: "0.5" } });
-    fireEvent.change(screen.getByLabelText(/glycatedhemoglobine/i), { target: { value: "6.0" } });
-
-    fireEvent.click(screen.getByRole("button", { name: /prédire/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/risque de diabète détecté/i)).toBeInTheDocument();
+      data: {
+        prediction: true,
+        probability: 0.85
+      }
     });
   });
 
-  it("shows loading state while fetching prediction", async () => {
-    const promise = new Promise((resolve) => setTimeout(() => resolve({ data: { prediction: false, probability: 0.15 } }), 500));
-    axios.post.mockReturnValue(promise);
-
+  it('renders the form correctly', async () => {
     render(<DiabetesPredictor />);
-    await waitFor(() => screen.getByRole("combobox"));
+    
+    // Vérifier que les champs du formulaire sont bien affichés
+    const inputs = screen.getAllByRole('spinbutton');
+    expect(inputs).toHaveLength(8); // 8 champs (age, glucose, bloodpressure, etc.)
+    
+    const select = screen.getByRole('combobox');
+    expect(select).toBeInTheDocument();
+    expect(screen.getAllByRole('option')).toHaveLength(4); // 3 modèles + 1 option vide
+  });
 
+  it('fetches models on load', async () => {
+    // Envelopper l'appel de render dans 'act()' pour gérer les mises à jour d'état asynchrones
+    await act(async () => {
+      render(<DiabetesPredictor />);
+    });
+    
+    // Attendre que l'API de modèles soit appelée
+    await waitFor(() => expect(axios.get).toHaveBeenCalledWith('http://localhost:8000/models'));
+    
+    // Vérifier que le premier modèle est sélectionné par défaut
+    expect(screen.getByRole('combobox')).toHaveValue('diabetes_model'); // Vérification que le modèle par défaut est correct
+  });
+
+  it('handles form submission and displays result', async () => {
+    render(<DiabetesPredictor />);
+
+    // Remplir les champs du formulaire avec des valeurs
     fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "25" } });
     fireEvent.change(screen.getByLabelText(/glucose/i), { target: { value: "110" } });
     fireEvent.change(screen.getByLabelText(/bloodpressure/i), { target: { value: "70" } });
     fireEvent.change(screen.getByLabelText(/skinthickness/i), { target: { value: "18" } });
-    fireEvent.change(screen.getByLabelText(/insulin/i), { target: { value: "85" } });
-    fireEvent.change(screen.getByLabelText(/bodymassindex/i), { target: { value: "22.3" } });
-    fireEvent.change(screen.getByLabelText(/diabetespedigreefunction/i), { target: { value: "0.2" } });
-    fireEvent.change(screen.getByLabelText(/glycatedhemoglobine/i), { target: { value: "5.4" } });
 
-    fireEvent.click(screen.getByRole("button", { name: /prédire/i }));
+    // Soumettre le formulaire
+    fireEvent.click(screen.getByText(/Prédire/i));
 
-    expect(screen.getByText(/chargement/i)).toBeInTheDocument();
+    // Attendre que la prédiction soit reçue et affichée
+    await waitFor(() => screen.getByText(/Risque de diabète détecté/));
+    
+    // Vérifier le contenu du résultat de la prédiction
+    expect(screen.getByText(/Risque de diabète détecté/)).toBeInTheDocument();
+    expect(screen.getByText(/Probabilité : 0.85/)).toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(screen.queryByText(/chargement/i)).not.toBeInTheDocument();
-    });
+  it('shows loading state while fetching prediction', async () => {
+    // Simuler un délai de réponse API
+    axios.post.mockResolvedValueOnce(new Promise(resolve => setTimeout(() => resolve({
+      data: {
+        prediction: false,
+        probability: 0.1
+      }
+    }), 3000)));
+
+    render(<DiabetesPredictor />);
+
+    // Remplir les champs du formulaire
+    fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "33" } });
+    fireEvent.change(screen.getByLabelText(/glucose/i), { target: { value: "150" } });
+    fireEvent.change(screen.getByLabelText(/bloodpressure/i), { target: { value: "80" } });
+
+    // Soumettre le formulaire
+    fireEvent.click(screen.getByText(/Prédire/i));
+
+    // Vérifier que l'état "Chargement..." est affiché
+    expect(screen.getByText(/Chargement.../)).toBeInTheDocument();
+    
+    // Attendre la fin du chargement et vérifier le résultat
+    await waitFor(() => screen.getByText(/Pas de risque significatif détecté/));
+  });
+
+  it('handles API error gracefully', async () => {
+    // Simuler une erreur dans l'appel de l'API
+    axios.post.mockRejectedValue(new Error('Erreur serveur'));
+
+    render(<DiabetesPredictor />);
+
+    // Remplir les champs du formulaire
+    fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "25" } });
+    fireEvent.change(screen.getByLabelText(/glucose/i), { target: { value: "110" } });
+    fireEvent.change(screen.getByLabelText(/bloodpressure/i), { target: { value: "70" } });
+
+    // Soumettre le formulaire
+    fireEvent.click(screen.getByText(/Prédire/i));
+
+    // Vérifier que l'état "Chargement..." est affiché
+    expect(screen.getByText(/Chargement.../)).toBeInTheDocument();
+    
+    // Attendre que l'erreur soit capturée et affichée
+    await waitFor(() => expect(screen.getByText(/Erreur lors de la prédiction/)).toBeInTheDocument());
   });
 });
