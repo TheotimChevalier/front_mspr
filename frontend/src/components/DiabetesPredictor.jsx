@@ -4,7 +4,7 @@ import { Card, CardContent } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
-import { Select } from "./ui/Select"; 
+
 import {
   ResponsiveContainer,
   Radar,
@@ -33,10 +33,11 @@ export default function DiabetesPredictor() {
   const [selectedModel, setSelectedModel] = useState("");
 
   useEffect(() => {
-    // Charger les modèles disponibles depuis l'API
     axios.get("http://localhost:8000/models").then((res) => {
       setModels(res.data);
-      setSelectedModel(res.data[0]); // Choisir le premier modèle par défaut
+      if (res.data.length > 0) {
+        setSelectedModel(res.data[0]);
+      }
     });
   }, []);
 
@@ -52,15 +53,20 @@ export default function DiabetesPredictor() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(`http://localhost:8000/predict/diabete/${selectedModel}`, {
-        ...Object.fromEntries(Object.entries(formData).map(([key, val]) => [key, parseFloat(val)])),
-      });
+      const numericData = Object.fromEntries(
+        Object.entries(formData).map(([key, val]) => [key, parseFloat(val)])
+      );
+
+      const response = await axios.post(
+        `http://localhost:8000/predict/diabete/${selectedModel}`,
+        numericData
+      );
       setResult(response.data);
     } catch (error) {
       console.error("Erreur lors de la prédiction :", error);
     }
     setLoading(false);
-};
+  };
 
   const chartData = [
     { metric: "Glucose", value: formData.glucose },
@@ -135,6 +141,7 @@ export default function DiabetesPredictor() {
               </p>
             </CardContent>
           </Card>
+
           <div className="mt-6">
             <ResponsiveContainer width="100%" height={300}>
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
