@@ -1,8 +1,10 @@
 export default {
     transform: {
-      "^.+\\.jsx?$": "babel-jest",
+      "^.+\\.[jt]sx?$": "babel-jest",
     },
-    moduleFileExtensions: ["js", "jsx"],
+    transformIgnorePatterns: [
+      "/node_modules/(?!(axios)/)", // 👈 permet de transpiler axios
+    ],
     testEnvironment: "jsdom",
   };
   
