@@ -69,6 +69,22 @@ button:hover:not(:disabled) {
   background-color: #2563eb;
 }
 
+select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 1rem;
+  background-color: white;
+  color: #333;
+  transition: border-color 0.2s ease, background-color 0.3s, color 0.3s;
+}
+
+select:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
 .card {
   background-color: #e6f4ea;
   padding: 1.5rem;
@@ -101,7 +117,7 @@ body.dark {
 }
 
 body.dark form label {
-  color: #ffffff; /* Changer la couleur des labels en mode sombre */
+  color: #ffffff; 
 }
 
 input[type="number"].dark {
@@ -120,6 +136,16 @@ button.dark {
 
 button.dark:hover:not(:disabled) {
   background-color: #1d4ed8;
+}
+
+body.dark select {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #4b5563;
+}
+
+body.dark select:focus {
+  border-color: #60a5fa;
 }
 
 /* Header Styling */
