@@ -1,10 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Card, CardContent } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
-import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
+import { Select } from "./ui/Select"; 
+import {
+  ResponsiveContainer,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+} from "recharts";
 
 const initialData = {
   age: "",
@@ -21,24 +29,38 @@ export default function DiabetesPredictor() {
   const [formData, setFormData] = useState(initialData);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState("");
+
+  useEffect(() => {
+    // Charger les modèles disponibles depuis l'API
+    axios.get("http://localhost:8000/models").then((res) => {
+      setModels(res.data);
+      setSelectedModel(res.data[0]); // Choisir le premier modèle par défaut
+    });
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleModelChange = (e) => {
+    setSelectedModel(e.target.value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:8000/predict", {
+      const response = await axios.post(`http://localhost:8000/predict/diabete/${selectedModel}`, {
         ...Object.fromEntries(Object.entries(formData).map(([key, val]) => [key, parseFloat(val)])),
       });
       setResult(response.data);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors de la prédiction :", error);
     }
     setLoading(false);
-  };
+};
 
   const chartData = [
     { metric: "Glucose", value: formData.glucose },
@@ -53,6 +75,7 @@ export default function DiabetesPredictor() {
   return (
     <main className="p-4 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-4 text-center">Prédiction du Diabète</h1>
+
       <form
         onSubmit={handleSubmit}
         className="grid gap-4 sm:grid-cols-2 md:grid-cols-3"
@@ -72,7 +95,28 @@ export default function DiabetesPredictor() {
             />
           </div>
         ))}
-        <div className="sm:col-span-2 md:col-span-3">
+
+        <div className="flex flex-col gap-1 sm:col-span-2 md:col-span-3">
+          <Label htmlFor="model">Modèle IA</Label>
+          <select
+            id="model"
+            name="model"
+            className="border rounded p-2"
+            value={selectedModel}
+            onChange={handleModelChange}
+          >
+            <option value="" disabled>
+              Choisissez votre modèle
+            </option>
+            {models.map((modelName) => (
+              <option key={modelName} value={modelName}>
+                {modelName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="button-container sm:col-span-2 md:col-span-3">
           <Button type="submit" disabled={loading} className="w-full mt-2">
             {loading ? "Chargement..." : "Prédire"}
           </Button>
