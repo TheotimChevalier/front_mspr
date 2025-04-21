@@ -1,9 +1,7 @@
-import React from "react";
-
-export function Label({ htmlFor, children, className = "", ...props }) {
+export const Label = ({ htmlFor, className, children }) => {
   return (
-    <label htmlFor={htmlFor} className={`text-sm font-medium ${className}`} {...props}>
+    <label htmlFor={htmlFor} className={className}>
       {children}
     </label>
   );
-}
+};

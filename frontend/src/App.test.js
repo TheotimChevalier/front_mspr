@@ -5,7 +5,7 @@ import DiabetesPredictor from "./components/DiabetesPredictor"; // adapte le che
 
 jest.mock("axios");
 
-const mockModels = ["model1", "model2"];
+const mockModels = ["diabetes_model", "bmi_model", "bloodpressure_model"];
 const mockPrediction = {
   prediction: true,
   probability: 0.87,
@@ -19,29 +19,28 @@ describe("DiabetesPredictor", () => {
 
   test("affiche tous les champs du formulaire", async () => {
     render(<DiabetesPredictor />);
-
-    // Attendre que les modèles soient chargés
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("model1")).toBeInTheDocument();
-    });
-
-    Object.keys({
-      age: "",
-      glucose: "",
-      bloodpressure: "",
-      skinthickness: "",
-      insulin: "",
-      bodymassindex: "",
-      diabetespedigreefunction: "",
-      glycatedhemoglobine: "",
-    }).forEach((key) => {
-      expect(screen.getByLabelText(new RegExp(key, "i"))).toBeInTheDocument();
+  
+    // Attendre que le modèle soit chargé et visible dans le DOM
+    await waitFor(() => screen.getByText(/Modèle IA/i));
+  
+    // Déboguer le DOM au cas où un élément manquerait
+    screen.debug();
+  
+    const fields = [
+      "age", "glucose", "bloodpressure", "skinthickness", "insulin",
+      "bodymassindex", "diabetespedigreefunction", "glycatedhemoglobine"
+    ];
+  
+    fields.forEach((field) => {
+      expect(screen.getByLabelText(new RegExp(field, "i"))).toBeInTheDocument();
     });
   });
 
   test("met à jour les champs du formulaire", async () => {
     render(<DiabetesPredictor />);
-    await waitFor(() => screen.getByDisplayValue("model1"));
+
+    // Attendre que les champs du formulaire soient visibles
+    await waitFor(() => screen.getByLabelText(/age/i));
 
     const ageInput = screen.getByLabelText(/age/i);
     fireEvent.change(ageInput, { target: { value: "45" } });
@@ -50,16 +49,20 @@ describe("DiabetesPredictor", () => {
 
   test("change le modèle sélectionné", async () => {
     render(<DiabetesPredictor />);
-    await waitFor(() => screen.getByDisplayValue("model1"));
+
+    // Attendre que le modèle par défaut soit chargé et visible
+    await waitFor(() => screen.getByDisplayValue("diabetes_model"));
 
     const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "model2" } });
-    expect(select.value).toBe("model2");
+    fireEvent.change(select, { target: { value: "bmi_model" } });
+    expect(select.value).toBe("bmi_model");
   });
 
   test("envoie les données et affiche le résultat", async () => {
     render(<DiabetesPredictor />);
-    await waitFor(() => screen.getByDisplayValue("model1"));
+
+    // Attendre que les champs du formulaire soient visibles
+    await waitFor(() => screen.getByLabelText(/age/i));
 
     // Remplir tous les champs requis
     fireEvent.change(screen.getByLabelText(/age/i), { target: { value: "50" } });
@@ -74,10 +77,10 @@ describe("DiabetesPredictor", () => {
     const button = screen.getByRole("button", { name: /prédire/i });
     fireEvent.click(button);
 
-    await waitFor(() =>
-      expect(screen.getByText(/Risque de diabète détecté/i)).toBeInTheDocument()
-    );
+    // Attendre que le résultat de la prédiction soit affiché
+    await waitFor(() => screen.getByText(/Risque de diabète détecté/i));
 
+    // Vérifier le texte affiché et la probabilité
     expect(screen.getByText(/0.87/)).toBeInTheDocument();
   });
 });
