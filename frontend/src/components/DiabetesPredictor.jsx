@@ -1,38 +1,52 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Card, CardContent } from "./ui/Card";
+import { Button } from "./ui/Button";
+import { Input } from "./ui/Input";
+import { Label } from "./ui/Label";
 
-const DiabetesPredictor = () => {
+import {
+  ResponsiveContainer,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+} from "recharts";
+
+const initialData = {
+  age: "",
+  glucose: "",
+  bloodpressure: "",
+  skinthickness: "",
+  insulin: "",
+  bodymassindex: "",
+  diabetespedigreefunction: "",
+  glycatedhemoglobine: "",
+};
+
+export default function DiabetesPredictor() {
+  const [formData, setFormData] = useState(initialData);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
-  const [formData, setFormData] = useState({
-    age: "",
-    glucose: "",
-    bloodpressure: "",
-    skinthickness: "",
-    insulin: "",
-    bodymassindex: "",
-    diabetespedigreefunction: "",
-    glycatedhemoglobine: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8000/models")
-      .then((res) => {
-        setModels(res.data);
-        if (res.data.length > 0) {
-          setSelectedModel(res.data[0]);
-        }
-      })
-      .catch((error) => {
-        console.error("Erreur lors du chargement des modèles", error);
-      });
+    axios.get("http://localhost:8000/models").then((res) => {
+      setModels(res.data);
+      if (res.data.length > 0) {
+        setSelectedModel(res.data[0]);
+      }
+    });
   }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleModelChange = (e) => {
+    setSelectedModel(e.target.value);
   };
 
   const handleSubmit = async (e) => {
@@ -42,6 +56,7 @@ const DiabetesPredictor = () => {
       const numericData = Object.fromEntries(
         Object.entries(formData).map(([key, val]) => [key, parseFloat(val)])
       );
+
       const response = await axios.post(
         `http://localhost:8000/predict/diabete/${selectedModel}`,
         numericData
@@ -53,127 +68,92 @@ const DiabetesPredictor = () => {
     setLoading(false);
   };
 
+  const chartData = [
+    { metric: "Glucose", value: formData.glucose },
+    { metric: "Blood Pressure", value: formData.bloodpressure },
+    { metric: "Skin Thickness", value: formData.skinthickness },
+    { metric: "Insulin", value: formData.insulin },
+    { metric: "BMI", value: formData.bodymassindex },
+    { metric: "DPF", value: formData.diabetespedigreefunction },
+    { metric: "HbA1c", value: formData.glycatedhemoglobine },
+  ];
+
   return (
-    <div>
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="age">Age</label>
-        <input
-          type="number"
-          id="age"
-          name="age"
-          value={formData.age}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label htmlFor="glucose">Glucose</label>
-        <input
-          type="number"
-          id="glucose"
-          name="glucose"
-          value={formData.glucose}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label htmlFor="bloodpressure">Blood Pressure</label>
-        <input
-          type="number"
-          id="bloodpressure"
-          name="bloodpressure"
-          value={formData.bloodpressure}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label htmlFor="skinthickness">Skin Thickness</label>
-        <input
-          type="number"
-          id="skinthickness"
-          name="skinthickness"
-          value={formData.skinthickness}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label htmlFor="insulin">Insulin</label>
-        <input
-          type="number"
-          id="insulin"
-          name="insulin"
-          value={formData.insulin}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label htmlFor="bodymassindex">Body Mass Index</label>
-        <input
-          type="number"
-          id="bodymassindex"
-          name="bodymassindex"
-          value={formData.bodymassindex}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label htmlFor="diabetespedigreefunction">Diabetes Pedigree Function</label>
-        <input
-          type="number"
-          id="diabetespedigreefunction"
-          name="diabetespedigreefunction"
-          value={formData.diabetespedigreefunction}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label htmlFor="glycatedhemoglobine">Glycated Hemoglobine</label>
-        <input
-          type="number"
-          id="glycatedhemoglobine"
-          name="glycatedhemoglobine"
-          value={formData.glycatedhemoglobine}
-          onChange={handleChange}
-        />
-      </div>
-    </form>
+    <main className="p-4 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4 text-center">Prédiction du Diabète</h1>
 
-    <div className="select-wrapper">
-      <select
-        id="model"
-        name="model"
-        value={selectedModel}
-        onChange={(e) => setSelectedModel(e.target.value)}
+      <form
+        onSubmit={handleSubmit}
+        className="grid gap-4 sm:grid-cols-2 md:grid-cols-3"
+        aria-label="Formulaire de prédiction"
       >
-        <option disabled value="">
-          Choose your model
-        </option>
-        {models.map((model, index) => (
-          <option key={index} value={model}>
-            {model}
-          </option>
+        {Object.keys(initialData).map((key) => (
+          <div key={key} className="flex flex-col gap-1">
+            <Label htmlFor={key}>{key}</Label>
+            <Input
+              type="number"
+              id={key}
+              name={key}
+              value={formData[key]}
+              onChange={handleChange}
+              step="any"
+              required
+            />
+          </div>
         ))}
-      </select>
-    </div>
 
-    <div className="button-wrapper">
-      <button type="submit" disabled={loading} onClick={handleSubmit}>
-        {loading ? "Loading..." : "Predict"}
-      </button>
-    </div>
+        <div className="flex flex-col gap-1 sm:col-span-2 md:col-span-3">
+          <Label htmlFor="model">Modèle IA</Label>
+          <select
+            id="model"
+            name="model"
+            className="border rounded p-2"
+            value={selectedModel}
+            onChange={handleModelChange}
+          >
+            <option value="" disabled>
+              Choisissez votre modèle
+            </option>
+            {models.map((modelName) => (
+              <option key={modelName} value={modelName}>
+                {modelName}
+              </option>
+            ))}
+          </select>
+        </div>
 
-    {result && (
-      <div className="card">
-        <h2>Prediction Result</h2>
-        <p>
-          {result.prediction
-            ? `Diabetes risk detected (Probability: ${result.probability.toFixed(2)})`
-            : `No significant risk detected (Probability: ${result.probability.toFixed(2)})`}
-        </p>
-      </div>
-    )}
-  </div>
-);
-};
+        <div className="button-container sm:col-span-2 md:col-span-3">
+          <Button type="submit" disabled={loading} className="w-full mt-2">
+            {loading ? "Chargement..." : "Prédire"}
+          </Button>
+        </div>
+      </form>
 
-export default DiabetesPredictor;
+      {result && (
+        <section className="mt-6">
+          <Card className="bg-green-50 dark:bg-green-900">
+            <CardContent className="p-4 text-center">
+              <h2 className="text-2xl font-semibold">Résultat de la Prédiction</h2>
+              <p className="mt-2 text-lg">
+                {result.prediction
+                  ? `Risque de diabète détecté (Probabilité : ${result.probability.toFixed(2)})`
+                  : `Pas de risque significatif détecté (Probabilité : ${result.probability.toFixed(2)})`}
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="mt-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="metric" />
+                <PolarRadiusAxis angle={30} domain={[0, 300]} />
+                <Radar name="Valeurs" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
+    </main>
+  );
+}
