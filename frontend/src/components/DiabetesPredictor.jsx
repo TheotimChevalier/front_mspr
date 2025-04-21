@@ -117,7 +117,7 @@ export default function DiabetesPredictor() {
           </select>
         </div>
 
-        <div className="sm:col-span-2 md:col-span-3">
+        <div className="button-container sm:col-span-2 md:col-span-3">
           <Button type="submit" disabled={loading} className="w-full mt-2">
             {loading ? "Chargement..." : "Prédire"}
           </Button>

@@ -69,6 +69,16 @@ button:hover:not(:disabled) {
   background-color: #2563eb;
 }
 
+.button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.button-container button {
+  width: 200px; 
+}
+
 select {
   padding: 0.5rem;
   border: 1px solid #ccc;
