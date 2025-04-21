@@ -1,10 +1,10 @@
-export default {
+module.exports = {
     transform: {
-      "^.+\\.[jt]sx?$": "babel-jest",
+      "^.+\\.[jt]sx?$": "babel-jest", // transforme tout le JS et JSX
     },
     transformIgnorePatterns: [
-      "/node_modules/(?!(axios)/)", // 👈 permet de transpiler axios
+      "/node_modules/(?!axios)/", // Ajoute axios à la liste des modules à transformer
     ],
-    testEnvironment: "jsdom",
+    testEnvironment: "jsdom", // Environnement de test pour les projets React
   };
   

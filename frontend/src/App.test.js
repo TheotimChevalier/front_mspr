@@ -4,7 +4,7 @@ import DiabetesPredictor from "./components/DiabetesPredictor";
 import axios from "axios";
 
 // ⛔️ On mock axios
-jest.mock("axios");
+jest.mock(`axios`);
 
 describe("DiabetesPredictor Component", () => {
   it("affiche tous les champs du formulaire", () => {
