@@ -1,10 +1,9 @@
-// src/components/ui/Label.jsx
-import React from 'react';
+import React from "react";
 
-export const Label = ({ children, htmlFor }) => {
+export function Label({ htmlFor, children, className = "", ...props }) {
   return (
-    <label htmlFor={htmlFor} className="text-gray-700 font-semibold">
+    <label htmlFor={htmlFor} className={`text-sm font-medium ${className}`} {...props}>
       {children}
     </label>
   );
-};
+}

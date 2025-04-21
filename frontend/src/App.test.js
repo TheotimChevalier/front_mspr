@@ -25,7 +25,7 @@ describe("DiabetesPredictor", () => {
   it("fetches models on load", async () => {
     // Simulez la réponse d'une requête GET pour obtenir les modèles
     axios.get.mockResolvedValueOnce({
-      data: ["model1", "model2", "model3"], // Réponse simulée
+      data: ["model1", "model2", "model3"], 
     });
 
     render(<DiabetesPredictor />);
