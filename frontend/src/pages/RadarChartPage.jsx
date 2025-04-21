@@ -8,7 +8,7 @@ export default function RadarChartPage() {
 
   return (
     <>
-      <h2>on peut faire autant de page que l'on veut en fonction des données/maladies que l'on souhaite</h2>
+      <h2>On peut créer autant de pages que l'on veut en fonction des données/maladies que l'on souhaite.</h2>
       <RadarGraphPage />
     </>
   );
